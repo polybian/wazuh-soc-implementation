@@ -1,0 +1,14 @@
+# One-shot TLS certificate generation for the Wazuh stack
+# (same generator image and layout as the official deployment).
+#   docker compose -f generate-certs.yml run --rm generator
+# Output lands in config/wazuh_indexer_ssl_certs/ (git-ignored).
+
+version: "3"
+
+services:
+  generator:
+    image: wazuh/wazuh-certs-generator:0.0.4
+    hostname: wazuh-certs-generator
+    volumes:
+      - ./config/wazuh_indexer_ssl_certs/:/certificates/
+      - ./config/certs.yml:/config/certs.yml
