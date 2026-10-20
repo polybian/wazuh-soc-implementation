@@ -52,6 +52,57 @@ the Wazuh dashboard, and writing an analyst-grade incident report.
 | `docs/detection-test-plan.md` | MITRE-mapped detection tests, lab-scope warnings, expected alerts |
 | `docs/sample-incident-report.md` | Fully written SIMULATED incident report (lab exercise) |
 | `templates/incident-report-template.md` | Blank template for future lab incidents |
+| `rules/local_rules.xml` | **v2:** custom rules 100001–100004 (SSH brute-force correlation, non-admin sudo, FIM escalation under `/etc`, persistence-location files) |
+| `rules/lists/lab-admin-users` | **v2:** CDB list of lab admin accounts used by rule 100002 |
+| `rules/README.md` | **v2:** what each custom rule detects, how to test it, deploy + `wazuh-logtest` validation steps |
+| `scripts/block-offending-ip.sh` | **v2:** active-response skeleton (dry-run by default, refuses bad input) — see the v2 section below |
+| `docs/sample-incident-report-2.md` | **v2:** second SIMULATED incident report, based on custom rule 100001 firing |
+
+## v2 — custom detections + active-response skeleton
+
+v1 proved the stock ruleset works. v2 writes detections of our own
+and rehearses the response step — deliberately stopping short of
+automating it.
+
+**Custom rules** (`rules/local_rules.xml`, IDs in the local 100000+
+range, all children of stock rules — full detail in
+`rules/README.md`):
+
+| ID | Level | Detects |
+|---|---|---|
+| 100001 | 12 | SSH brute force: 6+ failed logins (parent 5716) from one source IP in 60s — a tighter, louder take on stock 5710, tuned for this one-host lab |
+| 100002 | 10 | Successful sudo to root (parent 5400) by a user **not** in the CDB admin list `rules/lists/lab-admin-users` |
+| 100003 | 12 | FIM escalation: content change (parent 550) to a monitored file under `/etc` |
+| 100004 | 13 | FIM escalation: new file (parent 554) in a persistence location — `/etc/systemd/system/`, `/etc/cron*` |
+
+Each maps to an existing test in `docs/detection-test-plan.md`
+(100001 → Test 1, 100003 → Test 4, 100004 → Test 5; 100002 needs a
+temporary lab sudo grant, spelled out in `rules/README.md`).
+`docs/sample-incident-report-2.md` (INC-LAB-002, SIMULATED) works a
+full incident from 100001 firing — including the branch INC-LAB-001
+never exercised: the attack *failed*, so no credential is treated
+as compromised.
+
+**Active response, kept on a leash**
+(`scripts/block-offending-ip.sh`): a heavily commented skeleton in
+the Wazuh AR convention — accepts the legacy execd argv form
+(`add|delete <user> <srcip> <alert_id>`) or the Wazuh 4.x JSON
+object on stdin, validates the IP strictly, refuses loopback /
+manager / denylisted addresses, and logs every action and refusal.
+It **dry-runs by default**: an "add" only logs the `iptables`
+command it *would* run. Actually blocking requires
+`BLOCK_IP_APPLY=1`, root, and iptables present — and it is **not**
+wired to any `<active-response>` command in `ossec.conf`. That
+wiring waits for a false-positive soak of rule 100001; automating
+the block before that would automate the risk, not the response.
+
+**Honest status:** the v2 rules and the AR script were built and
+statically validated in a sandbox **without Docker** (see
+Validation below). The stack was **not booted**, and the rules were
+**not live-tested in a running manager** — no claim here that
+100001–100004 fire as written. The first run on a real Docker host
+is: deploy per `rules/README.md`, run `wazuh-logtest -t`, then
+work Tests 1/4/5 and fill in the test plan's **Observed** column.
 
 ## Quick start
 
@@ -108,3 +159,30 @@ ports 1514 (TCP), 1515 (TCP), 443 free. The indexer and API ports (9200,
   stack could not be booted and no containers were run. A full end-to-end
   test (agent enrollment, detection tests firing) must happen on a real
   Docker host; the runbook + test plan documents exactly what to observe.
+
+### v2 validation (run 2026-10-20, actual results)
+
+- `rules/local_rules.xml`: parsed with Python's `xml.etree.ElementTree`
+  — **OK**, root element `<group>`, rules found: 100001 (level 12),
+  100002 (level 10), 100003 (level 12), 100004 (level 13). This proves
+  well-formed XML only; Wazuh's own rule loading is checked with
+  `wazuh-logtest -t` on the manager (see `rules/README.md`).
+- `docker-compose.yml` (plus `generate-certs.yml`, `config/certs.yml`):
+  re-parsed with `python3 -c "import yaml"` after the v2 changes —
+  **no errors**.
+- `scripts/block-offending-ip.sh`: `bash -n` — **clean** (exit 0).
+  shellcheck was **not installed** in this sandbox, so no shellcheck
+  result is claimed.
+- Script refusal behaviour, observed: invoked once with **no
+  arguments** (log path redirected to a temp file via
+  `BLOCK_IP_AR_LOG`), it printed its usage/refusal message and
+  exited with code **2**; the refusal was written to the log
+  (`REFUSED: no arguments and no JSON on stdin — nothing to do`).
+  It was **not** invoked with a valid action during validation, and
+  **no blocking action was executed** — the script is a dry-run
+  skeleton by design.
+- **Not validated for v2, stated plainly:** Docker is not available
+  in this sandbox, so the stack was **not booted** and the custom
+  rules were **not live-tested in a manager** — `wazuh-logtest -t`,
+  rule firing against the lab agents, and any active-response
+  behaviour all remain to be proven on a real Docker host.
