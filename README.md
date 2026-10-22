@@ -47,7 +47,6 @@ the Wazuh dashboard, and writing an analyst-grade incident report.
 | `.env.example` | All secrets as `<generate-your-own>` placeholders, with generation commands |
 | `.gitignore` | Keeps `.env` and generated certs out of git |
 | `docs/architecture.md` | Design decisions and data flow |
-| `docs/interview-answers.md` | "How did you build this?" — talking points for interviews |
 | `docs/agent-enrollment-runbook.md` | Step-by-step: install + enroll test agents, verify, use groups |
 | `docs/detection-test-plan.md` | MITRE-mapped detection tests, scope warnings, expected alerts |
 | `docs/sample-incident-report.md` | Fully written SIMULATED incident report (test exercise) |
