@@ -95,13 +95,11 @@ wired to any `<active-response>` command in `ossec.conf`. That
 wiring waits for a false-positive soak of rule 100001; automating
 the block before that would automate the risk, not the response.
 
-**Honest status:** the v2 rules and the AR script were built and
-statically validated locally **without Docker** (see
-Validation below). The stack was **not booted**, and the rules were
-**not live-tested in a running manager** — no claim here that
-100001–100004 fire as written. The first run on a real Docker host
-is: deploy per `rules/README.md`, run `wazuh-logtest -t`, then
-work Tests 1/4/5 and fill in the test plan's **Observed** column.
+**Status:** the v2 rules and the active-response script pass static checks,
+but they haven't been loaded into a running manager yet, so treat rules
+100001–100004 as untested until then. First run on a Docker host: deploy per
+`rules/README.md`, run `wazuh-logtest -t`, then work through Tests 1, 4, and 5
+and fill in the **Observed** column of the test plan.
 
 ## Quick start
 
@@ -146,42 +144,19 @@ ports 1514 (TCP), 1515 (TCP), 443 free. The indexer and API ports (9200,
 - The API (55000) and indexer (9200) bind to localhost in this compose.
   If you ever expose them, add authentication + firewall rules.
 
-## Validation
+## Test results so far
 
-- `docker-compose.yml`, `generate-certs.yml`, and `config/certs.yml`:
-  parsed with `python3 -c "import yaml"` — no errors. Cross-checked
-  against Wazuh's official single-node deployment (image pins 4.14.9,
-  env vars, cert-mount paths, `vm.max_map_count` requirement).
-- `.env.example` uses only `<generate-your-own>` placeholders — no real
-  secrets anywhere in the repo (verified).
-- **Not validated (needs a real host):** Docker is not installed here, so the
-  stack could not be booted and no containers were run. A full end-to-end
-  test (agent enrollment, detection tests firing) must happen on a real
-  Docker host; the runbook + test plan documents exactly what to observe.
-
-### v2 validation (run 2026-10-20, actual results)
-
-- `rules/local_rules.xml`: parsed with Python's `xml.etree.ElementTree`
-  — **OK**, root element `<group>`, rules found: 100001 (level 12),
-  100002 (level 10), 100003 (level 12), 100004 (level 13). This proves
-  well-formed XML only; Wazuh's own rule loading is checked with
-  `wazuh-logtest -t` on the manager (see `rules/README.md`).
-- `docker-compose.yml` (plus `generate-certs.yml`, `config/certs.yml`):
-  re-parsed with `python3 -c "import yaml"` after the v2 changes —
-  **no errors**.
-- `scripts/block-offending-ip.sh`: `bash -n` — **clean** (exit 0).
-  shellcheck was **not installed** locally, so no shellcheck
-  result is claimed.
-- Script refusal behaviour, observed: invoked once with **no
-  arguments** (log path redirected to a temp file via
-  `BLOCK_IP_AR_LOG`), it printed its usage/refusal message and
-  exited with code **2**; the refusal was written to the log
-  (`REFUSED: no arguments and no JSON on stdin — nothing to do`).
-  It was **not** invoked with a valid action during validation, and
-  **no blocking action was executed** — the script is a dry-run
+- `docker-compose.yml`, `generate-certs.yml`, and `config/certs.yml` parse as
+  valid YAML and match Wazuh's official single-node deployment (image 4.14.9,
+  environment variables, certificate mounts, `vm.max_map_count`).
+- `.env.example` contains only `<generate-your-own>` placeholders; there are no
+  real secrets in the repo.
+- `rules/local_rules.xml` is well-formed XML with four rules: 100001
+  (level 12), 100002 (level 10), 100003 (level 12), 100004 (level 13). Wazuh's
+  own rule check is `wazuh-logtest -t` on the manager (see `rules/README.md`).
+- `scripts/block-offending-ip.sh` passes `bash -n`. Run with no arguments, it
+  prints its usage, logs `REFUSED: no arguments and no JSON on stdin`, and exits
+  with code 2. It has never been run with a real block action; it's a dry-run
   skeleton by design.
-- **Not validated for v2, stated plainly:** Docker is not available
-  in this environment, so the stack was **not booted** and the custom
-  rules were **not live-tested in a manager** — `wazuh-logtest -t`,
-  rule firing against the test agents, and any active-response
-  behaviour all remain to be proven on a real Docker host.
+- Not done yet: booting the stack, enrolling the test agents, and watching the
+  detections fire. The runbook and test plan list what to look for.
