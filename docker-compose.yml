@@ -1,4 +1,4 @@
-# Wazuh single-node stack (LAB). Adapted from Wazuh's official
+# Wazuh single-node stack (test environment). Adapted from Wazuh's official
 # single-node docker-compose (wazuh-docker, tag v4.14.9).
 # Images pinned — do NOT use :latest here.
 

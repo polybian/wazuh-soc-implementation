@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Wazuh SOC Lab — v2 custom rules (LAB ONLY)
+  Wazuh SOC — v2 custom rules (TEST ONLY)
 
   Deploy on the MANAGER as:
       /var/ossec/etc/rules/local_rules.xml
@@ -19,8 +19,8 @@
   Rule 100002 also needs its CDB list deployed BEFORE the restart —
   the manager refuses to load a rule whose list file is missing:
 
-      docker compose cp rules/lists/lab-admin-users \
-          wazuh.manager:/var/ossec/etc/lists/lab-admin-users
+      docker compose cp rules/lists/soc-admin-users \
+          wazuh.manager:/var/ossec/etc/lists/soc-admin-users
       (same chown/chmod as above)
 
   Validate before trusting any of this (on a real Docker host):
@@ -32,17 +32,17 @@
   See rules/README.md for what each rule detects and how to test it.
 -->
 
-<group name="local,lab_custom,">
+<group name="local,custom_rules,">
 
   <!-- (a) SSH brute force — frequency correlation on stock rule 5716.
        Fires EARLIER and LOUDER than stock rule 5710 on purpose: this
-       lab has exactly one SSH target that matters, so a tight window
+       this environment has exactly one SSH target that matters, so a tight window
        (6 failures / 60s / same source IP) is tuned for it. On a real
        fleet this threshold would page on noise — tune before reuse. -->
   <rule id="100001" level="12" frequency="6" timeframe="60">
     <if_matched_sid>5716</if_matched_sid>
     <same_srcip />
-    <description>Lab custom: SSH brute force — 6+ failed authentications from $(srcip) within 60 seconds</description>
+    <description>Custom: SSH brute force — 6+ failed authentications from $(srcip) within 60 seconds</description>
     <mitre>
       <id>T1110.001</id>
     </mitre>
@@ -51,14 +51,14 @@
   <!-- (b) sudo to root by a NON-admin user.
        Parent 5400 already means "successful sudo to ROOT executed",
        so this child only has to answer one question: was the caller
-       an admin? The CDB list etc/lists/lab-admin-users holds the
-       lab's admin accounts; lookup="not_match_key" fires the rule
+       an admin? The CDB list etc/lists/soc-admin-users holds the
+       the environment's admin accounts; lookup="not_match_key" fires the rule
        when $(srcuser) is NOT a key in that list. Deploy the list
        file together with this rules file (see header). -->
   <rule id="100002" level="10">
     <if_sid>5400</if_sid>
-    <list field="srcuser" lookup="not_match_key">etc/lists/lab-admin-users</list>
-    <description>Lab custom: sudo to root by non-admin user $(srcuser) — command: $(command)</description>
+    <list field="srcuser" lookup="not_match_key">etc/lists/soc-admin-users</list>
+    <description>Custom: sudo to root by non-admin user $(srcuser) — command: $(command)</description>
     <mitre>
       <id>T1548.003</id>
     </mitre>
@@ -72,7 +72,7 @@
   <rule id="100003" level="12">
     <if_sid>550</if_sid>
     <field name="file">^/etc/</field>
-    <description>Lab custom: FIM escalation — monitored file under /etc changed: $(file)</description>
+    <description>Custom: FIM escalation — monitored file under /etc changed: $(file)</description>
     <mitre>
       <id>T1565.001</id>
     </mitre>
@@ -87,7 +87,7 @@
   <rule id="100004" level="13">
     <if_sid>554</if_sid>
     <field name="file">^/etc/(systemd/system/|cron)</field>
-    <description>Lab custom: new file in a persistence location: $(file)</description>
+    <description>Custom: new file in a persistence location: $(file)</description>
     <mitre>
       <id>T1543.002</id>
       <id>T1053.003</id>

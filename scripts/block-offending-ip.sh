@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =====================================================================
-# block-offending-ip.sh — ACTIVE-RESPONSE SKELETON (LAB ONLY)
+# block-offending-ip.sh — ACTIVE-RESPONSE SKELETON (TEST ONLY)
 #
 # Blocks (drops) traffic from an offending source IP on the host that
 # runs this script. Written in the Wazuh/OSSEC active-response
@@ -36,7 +36,7 @@
 #     is running as root, and iptables exists — three gates, not one.
 #   - Do NOT wire this to an active-response command (ossec.conf) until
 #     you have soaked rule 100001 for false positives. Auto-blocking a
-#     NAT-ed or VPN source IP can lock legitimate users out of the lab.
+#     NAT-ed or VPN source IP can lock legitimate users out of the test environment.
 #
 # REFUSAL CONTRACT (tested): invoked with no arguments and no JSON on
 # stdin, the script prints a usage error and exits 2 — it must NEVER

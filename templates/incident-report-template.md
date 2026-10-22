@@ -1,8 +1,8 @@
 # Incident Report — [TITLE]
 
-> **Classification:** [e.g. LAB EXERCISE / PRODUCTION]
-> If this describes a lab exercise, state it in the header, first line:
-> "SIMULATED — LAB EXERCISE, NOT A REAL INCIDENT".
+> **Classification:** [e.g. TEST EXERCISE / PRODUCTION]
+> If this describes a test exercise, state it in the header, first line:
+> "SIMULATED — TEST EXERCISE, NOT A REAL INCIDENT".
 
 ## Summary
 - **Incident ID:** [INC-YYYY-NNN]

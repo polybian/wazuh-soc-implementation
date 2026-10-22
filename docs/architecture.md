@@ -2,18 +2,18 @@
 
 ## Components
 
-| Component | Role | Exposed (lab) |
+| Component | Role | Exposed (test env) |
 |---|---|---|
 | `wazuh.manager` | Analysis engine: decoders + rules evaluate events, raise alerts, serve the API. Filebeat ships alerts/events to the indexer. | 1514/tcp (events), 1515/tcp (enrollment), 514/udp (agentless syslog), 55000 on `127.0.0.1` (API) |
 | `wazuh.indexer` | Alert/event store (OpenSearch fork). | 9200 on `127.0.0.1` only |
 | `wazuh.dashboard` | Web UI: alerts, agent management, MITRE ATT&CK views, rules editor. | 443 (HTTPS) |
-| `lab-linux-01` / `lab-win-01` | Lab VMs running the Wazuh agent; the only targets of detection tests. | — |
-| `lab-attacker-01` | Kali/Ubuntu lab VM used to *generate* attack traffic (brute force, scans). Not an agent. | — |
+| `soc-linux-01` / `soc-win-01` | Test VMs running the Wazuh agent; the only targets of detection tests. | — |
+| `soc-attacker-01` | Kali/Ubuntu attacker VM used to *generate* attack traffic (brute force, scans). Not an agent. | — |
 
 ## Data flow
 
 ```
-agent (lab-linux-01) --TLS 1514--> manager: decoders/rules --> alert
+agent (soc-linux-01) --TLS 1514--> manager: decoders/rules --> alert
                                                |
                           Filebeat --TLS--> indexer (9200) <-- dashboard (443)
 ```
@@ -28,7 +28,7 @@ agent (lab-linux-01) --TLS 1514--> manager: decoders/rules --> alert
 ## Why single-node over a cluster
 
 A single-node stack needs one host (4 CPU / 8 GB RAM) and boots in ~5
-minutes — right for a learning lab and two agents. A cluster (manager
+minutes — right for a learning environment and two agents. A cluster (manager
 master/worker + multi-node indexer) buys HA and ingest scale but roughly
 doubles the RAM requirement (16 GB) and the operational surface. If ingest
 grows past one host, the path is: add indexer data nodes for scale, add a
@@ -40,8 +40,8 @@ managers with the load balancer.
 Agents give full-fidelity telemetry (FIM, auditd whodata, Sysmon, process
 inventory, vuln detection) and work on laptops/VMs that move networks.
 Agentless (SSH-based FIM, plain syslog on 514/udp) fits routers, switches,
-and legacy boxes where you can't install anything. This lab uses agents on
-both lab VMs; the manager's syslog port is enabled for agentless devices
+and legacy boxes where you can't install anything. This implementation uses agents on
+both test VMs; the manager's syslog port is enabled for agentless devices
 as a future extension.
 
 ## Why Wazuh over Splunk Free
@@ -54,10 +54,10 @@ as a future extension.
 - **Tradeoff, stated honestly:** Splunk has a bigger community, richer SPL,
   and mature enterprise support. Wazuh's indexing/scaling is yours to run,
   and its query language (DQL on the indexer) is less powerful than SPL.
-  For a portfolio lab, Wazuh demonstrates more SOC-relevant skills per
+  For a portfolio implementation, Wazuh demonstrates more SOC-relevant skills per
   dollar than any free-tier SIEM.
 
-## Hardening notes (lab defaults, production notes)
+## Hardening notes (defaults used here, production notes)
 
 - **TLS everywhere:** the cert generator creates a root CA and per-node
   certs; Filebeat uses `FILEBEAT_SSL_VERIFICATION_MODE=full`.

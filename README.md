@@ -1,10 +1,10 @@
-# Wazuh SOC Lab — Single-Node SIEM with Lab Agents
+# Wazuh SOC — Single-Node SIEM Implementation
 
 A self-hosted mini-SOC built on Wazuh: a single-node stack (manager + indexer
-+ dashboard) running in Docker Compose, with two lab agents enrolled and a
++ dashboard) running in Docker Compose, with two test agents enrolled and a
 repeatable detection-test plan. The goal is to practice the full SOC analyst
 loop — deploy, enroll, write/run detections, triage alerts, and document a
-simulated incident — on infrastructure the lab owner fully controls.
+simulated incident — on infrastructure the operator fully controls.
 
 **What this demonstrates:** Wazuh single-node deployment with Docker Compose
 (certs, secrets, volumes), agent deployment + enrollment (Linux/Windows),
@@ -28,10 +28,10 @@ the Wazuh dashboard, and writing an analyst-grade incident report.
          ┌──────────────┼──────────────┐
          ▼              ▼              ▼
   ┌─────────────┐ ┌─────────────┐ ┌─────────────┐
-  │ lab-linux-01│ │  lab-win-01 │ │ lab-attacker│
+  │ soc-linux-01│ │  soc-win-01 │ │ soc-attacker│
   │  (agent)    │ │  (agent)    │ │     -01     │
   │  group:     │ │  group:     │ │  attack VM  │
-  │  lab-linux  │ │  lab-win    │ │ (not an     │
+  │  soc-linux  │ │  soc-win    │ │ (not an     │
   └─────────────┘ └─────────────┘ │  agent)     │
                                   └─────────────┘
   * bound to 127.0.0.1 — not exposed on the LAN
@@ -48,12 +48,12 @@ the Wazuh dashboard, and writing an analyst-grade incident report.
 | `.gitignore` | Keeps `.env` and generated certs out of git |
 | `docs/architecture.md` | Design decisions and data flow |
 | `docs/interview-answers.md` | "How did you build this?" — talking points for interviews |
-| `docs/agent-enrollment-runbook.md` | Step-by-step: install + enroll lab agents, verify, use groups |
-| `docs/detection-test-plan.md` | MITRE-mapped detection tests, lab-scope warnings, expected alerts |
-| `docs/sample-incident-report.md` | Fully written SIMULATED incident report (lab exercise) |
-| `templates/incident-report-template.md` | Blank template for future lab incidents |
+| `docs/agent-enrollment-runbook.md` | Step-by-step: install + enroll test agents, verify, use groups |
+| `docs/detection-test-plan.md` | MITRE-mapped detection tests, scope warnings, expected alerts |
+| `docs/sample-incident-report.md` | Fully written SIMULATED incident report (test exercise) |
+| `templates/incident-report-template.md` | Blank template for future test incidents |
 | `rules/local_rules.xml` | **v2:** custom rules 100001–100004 (SSH brute-force correlation, non-admin sudo, FIM escalation under `/etc`, persistence-location files) |
-| `rules/lists/lab-admin-users` | **v2:** CDB list of lab admin accounts used by rule 100002 |
+| `rules/lists/soc-admin-users` | **v2:** CDB list of admin accounts used by rule 100002 |
 | `rules/README.md` | **v2:** what each custom rule detects, how to test it, deploy + `wazuh-logtest` validation steps |
 | `scripts/block-offending-ip.sh` | **v2:** active-response skeleton (dry-run by default, refuses bad input) — see the v2 section below |
 | `docs/sample-incident-report-2.md` | **v2:** second SIMULATED incident report, based on custom rule 100001 firing |
@@ -70,16 +70,16 @@ range, all children of stock rules — full detail in
 
 | ID | Level | Detects |
 |---|---|---|
-| 100001 | 12 | SSH brute force: 6+ failed logins (parent 5716) from one source IP in 60s — a tighter, louder take on stock 5710, tuned for this one-host lab |
-| 100002 | 10 | Successful sudo to root (parent 5400) by a user **not** in the CDB admin list `rules/lists/lab-admin-users` |
+| 100001 | 12 | SSH brute force: 6+ failed logins (parent 5716) from one source IP in 60s — a tighter, louder take on stock 5710, tuned for this one-host environment |
+| 100002 | 10 | Successful sudo to root (parent 5400) by a user **not** in the CDB admin list `rules/lists/soc-admin-users` |
 | 100003 | 12 | FIM escalation: content change (parent 550) to a monitored file under `/etc` |
 | 100004 | 13 | FIM escalation: new file (parent 554) in a persistence location — `/etc/systemd/system/`, `/etc/cron*` |
 
 Each maps to an existing test in `docs/detection-test-plan.md`
 (100001 → Test 1, 100003 → Test 4, 100004 → Test 5; 100002 needs a
-temporary lab sudo grant, spelled out in `rules/README.md`).
-`docs/sample-incident-report-2.md` (INC-LAB-002, SIMULATED) works a
-full incident from 100001 firing — including the branch INC-LAB-001
+temporary test sudo grant, spelled out in `rules/README.md`).
+`docs/sample-incident-report-2.md` (INC-002, SIMULATED) works a
+full incident from 100001 firing — including the branch INC-001
 never exercised: the attack *failed*, so no credential is treated
 as compromised.
 
@@ -134,8 +134,8 @@ ports 1514 (TCP), 1515 (TCP), 443 free. The indexer and API ports (9200,
 
 ## Security notes
 
-- **LAB scope only.** Every test in `docs/detection-test-plan.md` runs
-  exclusively against lab VMs the owner controls. Never point the tests at
+- **Test scope only.** Every test in `docs/detection-test-plan.md` runs
+  exclusively against test VMs the owner controls. Never point the tests at
   real infrastructure or third-party targets.
 - **Change every default.** Default dashboard credentials (`admin` /
   `SecretPassword`) are public knowledge. All secrets live in `.env`, which
@@ -184,5 +184,5 @@ ports 1514 (TCP), 1515 (TCP), 443 free. The indexer and API ports (9200,
 - **Not validated for v2, stated plainly:** Docker is not available
   in this sandbox, so the stack was **not booted** and the custom
   rules were **not live-tested in a manager** — `wazuh-logtest -t`,
-  rule firing against the lab agents, and any active-response
+  rule firing against the test agents, and any active-response
   behaviour all remain to be proven on a real Docker host.

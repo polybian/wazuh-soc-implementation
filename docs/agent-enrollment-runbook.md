@@ -1,16 +1,16 @@
 # Agent Enrollment Runbook
 
-Install + register Wazuh agents on the two lab VMs (`lab-linux-01`,
-`lab-win-01`), verify them in the dashboard, and organize with agent groups.
+Install + register Wazuh agents on the two test VMs (`soc-linux-01`,
+`soc-win-01`), verify them in the dashboard, and organize with agent groups.
 
-> ⚠️ **LAB SCOPE:** install agents only on VMs you own. The enrollment
-> password below lives in your `.env` — never reuse it outside the lab.
+> ⚠️ **TEST SCOPE:** install agents only on VMs you own. The enrollment
+> password below lives in your `.env` — never reuse it outside this environment.
 
 ## 0. Prerequisites
 
 - Stack running: `docker compose up -d`, dashboard reachable at
   `https://<manager host IP>/`.
-- The Docker host must be reachable from the lab VMs on **1514/tcp**
+- The Docker host must be reachable from the test VMs on **1514/tcp**
   (events) and **1515/tcp** (enrollment). If agent enrollment fails, check
   the host firewall first.
 - Set the enrollment password on the manager (once):
@@ -26,14 +26,14 @@ Install + register Wazuh agents on the two lab VMs (`lab-linux-01`,
 
 1. Log in to the dashboard as `admin`.
 2. **☰ Management → Groups → Add new group**
-   - Create `lab-linux` and `lab-win`.
+   - Create `soc-linux` and `soc-win`.
 3. Groups receive shared configuration from the manager: after creating a
    group, edit its `agent.conf` (group config) in the dashboard; the
    manager merges it into each member agent's config automatically.
 
-## 2. Linux agent (lab-linux-01) — deployment variables method
+## 2. Linux agent (soc-linux-01) — deployment variables method
 
-On the lab Linux VM (Debian/Ubuntu):
+On the Linux test VM (Debian/Ubuntu):
 
 ```bash
 # Import the Wazuh GPG key and add the repo
@@ -47,8 +47,8 @@ sudo apt-get update
 # Install and auto-enroll in one step
 WAZUH_MANAGER="<manager host IP>" \
 WAZUH_REGISTRATION_PASSWORD="<same password as .env>" \
-WAZUH_AGENT_NAME="lab-linux-01" \
-WAZUH_AGENT_GROUP="lab-linux" \
+WAZUH_AGENT_NAME="soc-linux-01" \
+WAZUH_AGENT_GROUP="soc-linux" \
   sudo -E apt-get install wazuh-agent
 
 sudo systemctl daemon-reload
@@ -58,15 +58,15 @@ sudo systemctl enable --now wazuh-agent
 The installer presents the registration password to authd on 1515 and
 writes the agent key to `/var/ossec/etc/client.keys`.
 
-## 3. Windows agent (lab-win-01) — installer method
+## 3. Windows agent (soc-win-01) — installer method
 
-On the lab Windows VM, from an elevated PowerShell:
+On the Windows test VM, from an elevated PowerShell:
 
 ```powershell
 Invoke-WebRequest -Uri https://packages.wazuh.com/4.x/windows/wazuh-agent-4.14.9-1.msi -OutFile wazuh-agent.msi
 msiexec.exe /i wazuh-agent.msi /q WAZUH_MANAGER="<manager host IP>" `
   WAZUH_REGISTRATION_PASSWORD="<same password as .env>" `
-  WAZUH_AGENT_NAME="lab-win-01" WAZUH_AGENT_GROUP="lab-win"
+  WAZUH_AGENT_NAME="soc-win-01" WAZUH_AGENT_GROUP="soc-win"
 NET START WazuhSvc
 ```
 
@@ -82,7 +82,7 @@ agent** → pick OS → copy the generated one-liner.)
 
    ```bash
    docker compose exec wazuh.manager /var/ossec/bin/agent_control -l
-   # Expected: lab-linux-01 and lab-win-01 listed as Active.
+   # Expected: soc-linux-01 and soc-win-01 listed as Active.
    ```
 
 4. Trigger a smoke test on the Linux agent and confirm it lands in the
@@ -90,7 +90,7 @@ agent** → pick OS → copy the generated one-liner.)
    file):
 
    ```bash
-   sudo touch /etc/lab-smoke-test && sudo rm /etc/lab-smoke-test
+   sudo touch /etc/soc-smoke-test && sudo rm /etc/soc-smoke-test
    ```
 
 ## 5. Troubleshooting
