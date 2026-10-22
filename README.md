@@ -49,13 +49,13 @@ the Wazuh dashboard, and writing an analyst-grade incident report.
 | `docs/architecture.md` | Design decisions and data flow |
 | `docs/agent-enrollment-runbook.md` | Step-by-step: install + enroll test agents, verify, use groups |
 | `docs/detection-test-plan.md` | MITRE-mapped detection tests, scope warnings, expected alerts |
-| `docs/sample-incident-report.md` | Fully written SIMULATED incident report (test exercise) |
+| `docs/sample-incident-report.md` | Tabletop walkthrough — expected detections (not observed events) |
 | `templates/incident-report-template.md` | Blank template for future test incidents |
 | `rules/local_rules.xml` | **v2:** custom rules 100001–100004 (SSH brute-force correlation, non-admin sudo, FIM escalation under `/etc`, persistence-location files) |
 | `rules/lists/soc-admin-users` | **v2:** CDB list of admin accounts used by rule 100002 |
 | `rules/README.md` | **v2:** what each custom rule detects, how to test it, deploy + `wazuh-logtest` validation steps |
 | `scripts/block-offending-ip.sh` | **v2:** active-response skeleton (dry-run by default, refuses bad input) — see the v2 section below |
-| `docs/sample-incident-report-2.md` | **v2:** second SIMULATED incident report, based on custom rule 100001 firing |
+| `docs/sample-incident-report-2.md` | **v2:** tabletop walkthrough — custom rule 100001 firing (not observed events) |
 
 ## v2 — custom detections + active-response skeleton
 
@@ -70,7 +70,7 @@ range, all children of stock rules — full detail in
 | ID | Level | Detects |
 |---|---|---|
 | 100001 | 12 | SSH brute force: 6+ failed logins (parent 5716) from one source IP in 60s — a tighter, louder take on stock 5710, tuned for this one-host environment |
-| 100002 | 10 | Successful sudo to root (parent 5400) by a user **not** in the CDB admin list `rules/lists/soc-admin-users` |
+| 100002 | 10 | Successful sudo to root (parent 5402) by a user **not** in the CDB admin list `rules/lists/soc-admin-users` |
 | 100003 | 12 | FIM escalation: content change (parent 550) to a monitored file under `/etc` |
 | 100004 | 13 | FIM escalation: new file (parent 554) in a persistence location — `/etc/systemd/system/`, `/etc/cron*` |
 
@@ -96,7 +96,7 @@ wiring waits for a false-positive soak of rule 100001; automating
 the block before that would automate the risk, not the response.
 
 **Honest status:** the v2 rules and the AR script were built and
-statically validated in a sandbox **without Docker** (see
+statically validated locally **without Docker** (see
 Validation below). The stack was **not booted**, and the rules were
 **not live-tested in a running manager** — no claim here that
 100001–100004 fire as written. The first run on a real Docker host
@@ -154,7 +154,7 @@ ports 1514 (TCP), 1515 (TCP), 443 free. The indexer and API ports (9200,
   env vars, cert-mount paths, `vm.max_map_count` requirement).
 - `.env.example` uses only `<generate-your-own>` placeholders — no real
   secrets anywhere in the repo (verified).
-- **Not validated in this sandbox:** Docker is not installed here, so the
+- **Not validated (needs a real host):** Docker is not installed here, so the
   stack could not be booted and no containers were run. A full end-to-end
   test (agent enrollment, detection tests firing) must happen on a real
   Docker host; the runbook + test plan documents exactly what to observe.
@@ -170,7 +170,7 @@ ports 1514 (TCP), 1515 (TCP), 443 free. The indexer and API ports (9200,
   re-parsed with `python3 -c "import yaml"` after the v2 changes —
   **no errors**.
 - `scripts/block-offending-ip.sh`: `bash -n` — **clean** (exit 0).
-  shellcheck was **not installed** in this sandbox, so no shellcheck
+  shellcheck was **not installed** locally, so no shellcheck
   result is claimed.
 - Script refusal behaviour, observed: invoked once with **no
   arguments** (log path redirected to a temp file via
@@ -181,7 +181,7 @@ ports 1514 (TCP), 1515 (TCP), 443 free. The indexer and API ports (9200,
   **no blocking action was executed** — the script is a dry-run
   skeleton by design.
 - **Not validated for v2, stated plainly:** Docker is not available
-  in this sandbox, so the stack was **not booted** and the custom
+  in this environment, so the stack was **not booted** and the custom
   rules were **not live-tested in a manager** — `wazuh-logtest -t`,
   rule firing against the test agents, and any active-response
   behaviour all remain to be proven on a real Docker host.

@@ -9,7 +9,7 @@ custom decoders to maintain.
 > ⚠️ **TEST SCOPE:** thresholds here are tuned for a two-agent test environment,
 > not a fleet. Read the tuning note on each rule before reusing it
 > anywhere else. These rules were **not live-tested** in the build
-> sandbox (no Docker there) — validate with `wazuh-logtest -t` on
+> environment (no Docker there) — validate with `wazuh-logtest -t` on
 > the manager before trusting them; see "Deploy + validate" below.
 
 ## The rules
@@ -17,7 +17,7 @@ custom decoders to maintain.
 | ID | Level | Parent | Detects |
 |---|---|---|---|
 | 100001 | 12 | 5716 (sshd auth failed) | SSH brute force: 6+ failed logins from one source IP in 60s |
-| 100002 | 10 | 5400 (sudo to root) | Successful sudo to root by a user who is **not** an admin |
+| 100002 | 10 | 5402 (successful sudo to root) | Successful sudo to root by a user who is **not** an admin |
 | 100003 | 12 | 550 (FIM checksum changed) | Content change to a monitored file under `/etc` |
 | 100004 | 13 | 554 (FIM file added) | New file in a persistence location (`/etc/systemd/system/`, `/etc/cron*`) |
 
@@ -45,7 +45,7 @@ custom decoders to maintain.
 
 ### 100002 — sudo to root by a non-admin user
 
-- **Logic:** parent 5400 already means "successful sudo to ROOT
+- **Logic:** parent 5402 already means "successful sudo to ROOT
   executed", so the child adds a single condition: the invoking
   user (`srcuser`) is **not** in the CDB list
   [`lists/soc-admin-users`](lists/soc-admin-users), via
@@ -67,8 +67,8 @@ custom decoders to maintain.
   doesn't cover: in this test environment only, temporarily grant the `testuser`
   account sudo (`usermod -aG sudo testuser` on `soc-linux-01`), run
   `sudo -i` or `sudo /bin/true` as `testuser`, then **remove the
-  grant again**. Expect two alerts: stock 5400 and custom 100002.
-  Control case: run the same command as `testadmin` — expect 5400
+  grant again**. Expect two alerts: stock 5402 and custom 100002.
+  Control case: run the same command as `testadmin` — expect 5402
   only, no 100002. That pair (fires for `testuser`, silent for
   `testadmin`) is the whole test.
 
@@ -117,6 +117,14 @@ docker compose exec wazuh.manager bash -c \
 # bad XML, unknown parent IDs, and a missing CDB list:
 docker compose exec wazuh.manager /var/ossec/bin/wazuh-logtest -t
 
+# The CDB list must also be DECLARED in the manager's ossec.conf under
+# <ruleset> (Wazuh only loads declared lists). Add once, before restart:
+#   <ruleset>
+#     ...
+#     <list>etc/lists/soc-admin-users</list>
+#   </ruleset>
+# Verify against the <ruleset> block in your manager's ossec.conf.
+
 docker compose restart wazuh.manager
 ```
 
@@ -138,4 +146,4 @@ the way a rule expects, logtest output is where you'll see it.
   exceptions.
 - Custom rules that stop matching after a Wazuh upgrade usually
   broke because a stock parent ID changed — re-check the parents
-  (5716, 5400, 550, 554) on every version bump.
+  (5716, 5402, 550, 554) on every version bump.

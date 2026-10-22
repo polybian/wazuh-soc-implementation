@@ -82,7 +82,7 @@ IPTABLES_BIN="$(command -v iptables 2>/dev/null || true)"
 
 # log_action <message...>
 # Appends a timestamped line to LOG_FILE; if the log is not writable
-# (e.g. this skeleton run in a sandbox), echoes to stderr instead.
+# (e.g. this skeleton run in an offline environment), echoes to stderr instead.
 # Returns 0 always — logging must never be a new failure mode.
 log_action() {
     local ts line

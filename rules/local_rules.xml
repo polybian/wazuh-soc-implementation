@@ -23,12 +23,24 @@
           wazuh.manager:/var/ossec/etc/lists/soc-admin-users
       (same chown/chmod as above)
 
+  The list must ALSO be declared in the manager's ossec.conf under
+  <ruleset> — Wazuh only loads CDB lists that are declared there:
+
+      <ruleset>
+        ...
+        <list>etc/lists/soc-admin-users</list>
+      </ruleset>
+
+  (Check the <ruleset> block in your manager's ossec.conf; stock lists
+  such as etc/lists/audit-keys are declared the same way.) Apply the
+  ossec.conf change before the restart as well.
+
   Validate before trusting any of this (on a real Docker host):
       docker compose exec wazuh.manager /var/ossec/bin/wazuh-logtest -t
 
   Rule IDs 100001-100004 sit in the 100000+ range Wazuh reserves for
   local/custom rules, so they can never collide with the stock ruleset
-  (stock rules referenced here: 550, 554, 5400, 5716).
+  (stock rules referenced here: 550, 554, 5402, 5716).
   See rules/README.md for what each rule detects and how to test it.
 -->
 
@@ -49,14 +61,14 @@
   </rule>
 
   <!-- (b) sudo to root by a NON-admin user.
-       Parent 5400 already means "successful sudo to ROOT executed",
+       Parent 5402 already means "successful sudo to ROOT executed",
        so this child only has to answer one question: was the caller
        an admin? The CDB list etc/lists/soc-admin-users holds the
        the environment's admin accounts; lookup="not_match_key" fires the rule
        when $(srcuser) is NOT a key in that list. Deploy the list
        file together with this rules file (see header). -->
   <rule id="100002" level="10">
-    <if_sid>5400</if_sid>
+    <if_sid>5402</if_sid>
     <list field="srcuser" lookup="not_match_key">etc/lists/soc-admin-users</list>
     <description>Custom: sudo to root by non-admin user $(srcuser) — command: $(command)</description>
     <mitre>
