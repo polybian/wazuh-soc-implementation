@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Wazuh SOC — v2 custom rules (TEST ONLY)
+  Wazuh SOC - v2 custom rules (TEST ONLY)
 
   Deploy on the MANAGER as:
       /var/ossec/etc/rules/local_rules.xml
@@ -16,7 +16,7 @@
           chmod 660 /var/ossec/etc/rules/local_rules.xml
       docker compose restart wazuh.manager
 
-  Rule 100002 also needs its CDB list deployed BEFORE the restart —
+  Rule 100002 also needs its CDB list deployed BEFORE the restart - 
   the manager refuses to load a rule whose list file is missing:
 
       docker compose cp rules/lists/soc-admin-users \
@@ -24,7 +24,7 @@
       (same chown/chmod as above)
 
   The list must ALSO be declared in the manager's ossec.conf under
-  <ruleset> — Wazuh only loads CDB lists that are declared there:
+  <ruleset> - Wazuh only loads CDB lists that are declared there:
 
       <ruleset>
         ...
@@ -46,15 +46,15 @@
 
 <group name="local,custom_rules,">
 
-  <!-- (a) SSH brute force — frequency correlation on stock rule 5716.
+  <!-- (a) SSH brute force - frequency correlation on stock rule 5716.
        Fires EARLIER and LOUDER than stock rule 5710 on purpose: this
        this environment has exactly one SSH target that matters, so a tight window
        (6 failures / 60s / same source IP) is tuned for it. On a real
-       fleet this threshold would page on noise — tune before reuse. -->
+       fleet this threshold would page on noise - tune before reuse. -->
   <rule id="100001" level="12" frequency="6" timeframe="60">
     <if_matched_sid>5716</if_matched_sid>
     <same_srcip />
-    <description>Custom: SSH brute force — 6+ failed authentications from $(srcip) within 60 seconds</description>
+    <description>Custom: SSH brute force - 6+ failed authentications from $(srcip) within 60 seconds</description>
     <mitre>
       <id>T1110.001</id>
     </mitre>
@@ -70,13 +70,13 @@
   <rule id="100002" level="10">
     <if_sid>5402</if_sid>
     <list field="srcuser" lookup="not_match_key">etc/lists/soc-admin-users</list>
-    <description>Custom: sudo to root by non-admin user $(srcuser) — command: $(command)</description>
+    <description>Custom: sudo to root by non-admin user $(srcuser) - command: $(command)</description>
     <mitre>
       <id>T1548.003</id>
     </mitre>
   </rule>
 
-  <!-- (c) FIM escalation — content change under /etc.
+  <!-- (c) FIM escalation - content change under /etc.
        Parent 550 is the stock "integrity checksum changed" alert
        (level 7, fires for any monitored path). This child escalates
        only the /etc tree, where a changed file usually means a
@@ -84,13 +84,13 @@
   <rule id="100003" level="12">
     <if_sid>550</if_sid>
     <field name="file">^/etc/</field>
-    <description>Custom: FIM escalation — monitored file under /etc changed: $(file)</description>
+    <description>Custom: FIM escalation - monitored file under /etc changed: $(file)</description>
     <mitre>
       <id>T1565.001</id>
     </mitre>
   </rule>
 
-  <!-- (d) FIM escalation — NEW file in a persistence location.
+  <!-- (d) FIM escalation - NEW file in a persistence location.
        Parent 554 is the stock "file added to the system" alert.
        A new file under systemd's unit directory or a cron directory
        is the exact shape of detection Test 5 (persistence), so it

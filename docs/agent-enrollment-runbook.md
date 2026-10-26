@@ -4,7 +4,7 @@ Install + register Wazuh agents on the two test VMs (`soc-linux-01`,
 `soc-win-01`), verify them in the dashboard, and organize with agent groups.
 
 > ⚠️ **TEST SCOPE:** install agents only on VMs you own. The enrollment
-> password below lives in your `.env` — never reuse it outside this environment.
+> password below lives in your `.env`: never reuse it outside this environment.
 
 ## 0. Prerequisites
 
@@ -31,7 +31,7 @@ Install + register Wazuh agents on the two test VMs (`soc-linux-01`,
    group, edit its `agent.conf` (group config) in the dashboard; the
    manager merges it into each member agent's config automatically.
 
-## 2. Linux agent (soc-linux-01) — deployment variables method
+## 2. Linux agent (soc-linux-01): deployment variables method
 
 On the Linux test VM (Debian/Ubuntu):
 
@@ -58,7 +58,7 @@ sudo systemctl enable --now wazuh-agent
 The installer presents the registration password to authd on 1515 and
 writes the agent key to `/var/ossec/etc/client.keys`.
 
-## 3. Windows agent (soc-win-01) — installer method
+## 3. Windows agent (soc-win-01): installer method
 
 On the Windows test VM, from an elevated PowerShell:
 
@@ -75,7 +75,7 @@ agent** → pick OS → copy the generated one-liner.)
 
 ## 4. Verify in the dashboard
 
-1. **Modules → Agents** — both agents show **Active** with the correct
+1. **Modules → Agents**: both agents show **Active** with the correct
    version and group.
 2. Click an agent → confirm events are flowing (last keep-alive updating).
 3. On the manager host, cross-check on the CLI:
@@ -100,5 +100,5 @@ agent** → pick OS → copy the generated one-liner.)
 | Agent stuck "Disconnected" | 1514 blocked, or key mismatch after re-install | Check host firewall; if the agent was re-imaged, delete the stale agent in the dashboard and re-enroll |
 | "Duplicate agent name" on enrollment | Name already registered | Enroll with a unique name or remove the old agent first |
 | Enrollment fails with password error | `authd.pass` missing/wrong, manager not restarted | Redo step 0, restart `wazuh.manager` |
-| Agent events arrive, no alerts | Rules not matching (expected for quiet hosts) | Run the detection test plan — tests are designed to fire known rules |
+| Agent events arrive, no alerts | Rules not matching (expected for quiet hosts) | Run the detection test plan: tests are designed to fire known rules |
 | Windows agent service won't start | Wrong manager IP at install | Re-run MSI with the correct `WAZUH_MANAGER`, check `C:\Program Files (x86)\ossec-agent\ossec.log` |

@@ -7,8 +7,8 @@
 | `wazuh.manager` | Analysis engine: decoders + rules evaluate events, raise alerts, serve the API. Filebeat ships alerts/events to the indexer. | 1514/tcp (events), 1515/tcp (enrollment), 514/udp (agentless syslog), 55000 on `127.0.0.1` (API) |
 | `wazuh.indexer` | Alert/event store (OpenSearch fork). | 9200 on `127.0.0.1` only |
 | `wazuh.dashboard` | Web UI: alerts, agent management, MITRE ATT&CK views, rules editor. | 443 (HTTPS) |
-| `soc-linux-01` / `soc-win-01` | Test VMs running the Wazuh agent; the only targets of detection tests. | — |
-| `soc-attacker-01` | Kali/Ubuntu attacker VM used to *generate* attack traffic (brute force, scans). Not an agent. | — |
+| `soc-linux-01` / `soc-win-01` | Test VMs running the Wazuh agent; the only targets of detection tests. |: |
+| `soc-attacker-01` | Kali/Ubuntu attacker VM used to *generate* attack traffic (brute force, scans). Not an agent. |: |
 
 ## Data flow
 
@@ -28,7 +28,7 @@ agent (soc-linux-01) --TLS 1514--> manager: decoders/rules --> alert
 ## Why single-node over a cluster
 
 A single-node stack needs one host (4 CPU / 8 GB RAM) and boots in ~5
-minutes — right for a learning environment and two agents. A cluster (manager
+minutes: right for a learning environment and two agents. A cluster (manager
 master/worker + multi-node indexer) buys HA and ingest scale but roughly
 doubles the RAM requirement (16 GB) and the operational surface. If ingest
 grows past one host, the path is: add indexer data nodes for scale, add a
@@ -49,9 +49,9 @@ as a future extension.
 - **No ingest cap games:** Splunk Free caps at 500 MB/day and disables
   scheduled alerting; Wazuh has no ingest limit and ships FIM, vulnerability
   detection, SCA (CIS hardening checks), and MITRE-mapped rules out of the box.
-- **Agent included:** the agent, server, and dashboard are all free — no
+- **Agent included:** the agent, server, and dashboard are all free, no
   separate forwarder licensing.
-- **Tradeoff, stated honestly:** Splunk has a bigger community, richer SPL,
+- **Tradeoff:** Splunk has a bigger community, richer SPL,
   and mature enterprise support. Wazuh's indexing/scaling is yours to run,
   and its query language (DQL on the indexer) is less powerful than SPL.
   For a portfolio implementation, Wazuh demonstrates more SOC-relevant skills per
@@ -76,7 +76,7 @@ as a future extension.
      re-run the enrollment one-liner on new agents.
 - **Host:** `vm.max_map_count=262144` is mandatory for the indexer
   (OpenSearch mmap). Manager volumes (`/var/ossec/etc`, `/var/ossec/logs`,
-  `/var/ossec/queue`) are persisted Docker volumes — back them up before
+  `/var/ossec/queue`) are persisted Docker volumes: back them up before
   upgrades; rules/custom decoders live in `/var/ossec/etc/rules`.
 - **Patching:** pin the images and bump deliberately (`4.14.9` → next
   minor), keeping manager/agent versions in lockstep.

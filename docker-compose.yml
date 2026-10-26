@@ -1,6 +1,6 @@
 # Wazuh single-node stack (test environment). Adapted from Wazuh's official
 # single-node docker-compose (wazuh-docker, tag v4.14.9).
-# Images pinned — do NOT use :latest here.
+# Images pinned - do NOT use :latest here.
 
 version: "3"
 
@@ -13,7 +13,7 @@ services:
       - "1514:1514"        # agent event channel (TCP)
       - "1515:1515"        # agent enrollment (authd)
       - "514:514/udp"      # syslog for agentless devices
-      - "127.0.0.1:55000:55000"  # Wazuh API — localhost only
+      - "127.0.0.1:55000:55000"  # Wazuh API - localhost only
     environment:
       - INDEXER_URL=https://wazuh.indexer:9200
       - INDEXER_USERNAME=admin
@@ -47,7 +47,7 @@ services:
     hostname: wazuh.indexer
     restart: always
     ports:
-      - "127.0.0.1:9200:9200"  # indexer API — localhost only
+      - "127.0.0.1:9200:9200"  # indexer API - localhost only
     environment:
       - "OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g"
     ulimits:

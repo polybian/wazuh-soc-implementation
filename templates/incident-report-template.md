@@ -1,8 +1,8 @@
-# Incident Report — [TITLE]
+# Incident Report: [TITLE]
 
 > **Classification:** [e.g. TEST EXERCISE / PRODUCTION]
 > If this describes a test exercise, state it in the header, first line:
-> "SIMULATED — TEST EXERCISE, NOT A REAL INCIDENT".
+> "SIMULATED: TEST EXERCISE, NOT A REAL INCIDENT".
 
 ## Summary
 - **Incident ID:** [INC-YYYY-NNN]
@@ -21,7 +21,7 @@
 
 ## Detection
 - [Which alert fired, rule ID + severity, and where it was seen
-  (dashboard view/filter). What made it suspicious — correlation,
+  (dashboard view/filter). What made it suspicious: correlation,
   volume, source, timing.]
 
 ## Triage

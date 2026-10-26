@@ -1,15 +1,15 @@
-# Custom Rules — v2 (test environment)
+# Custom Rules: v2 (test environment)
 
 Custom detection content for the Wazuh SOC implementation, in
 [`local_rules.xml`](local_rules.xml). Four rules, all in the
 **100000+** ID range Wazuh reserves for local rules, all built as
-children of stock rules so they inherit the stock decoders — no
+children of stock rules so they inherit the stock decoders: no
 custom decoders to maintain.
 
 > ⚠️ **TEST SCOPE:** thresholds here are tuned for a two-agent test environment,
 > not a fleet. Read the tuning note on each rule before reusing it
 > anywhere else. These rules were **not live-tested** in the build
-> environment (no Docker there) — validate with `wazuh-logtest -t` on
+> environment (no Docker there): validate with `wazuh-logtest -t` on
 > the manager before trusting them; see "Deploy + validate" below.
 
 ## The rules
@@ -21,7 +21,7 @@ custom decoders to maintain.
 | 100003 | 12 | 550 (FIM checksum changed) | Content change to a monitored file under `/etc` |
 | 100004 | 13 | 554 (FIM file added) | New file in a persistence location (`/etc/systemd/system/`, `/etc/cron*`) |
 
-### 100001 — SSH brute force (frequency correlation)
+### 100001: SSH brute force (frequency correlation)
 
 - **Logic:** `<if_matched_sid>5716</if_matched_sid>` with
   `frequency="6" timeframe="60"` and `<same_srcip />`: the 6th failed
@@ -43,21 +43,21 @@ custom decoders to maintain.
 - **Worked example:** `docs/sample-incident-report-2.md` is a full
   simulated incident built on this rule firing.
 
-### 100002 — sudo to root by a non-admin user
+### 100002: sudo to root by a non-admin user
 
 - **Logic:** parent 5402 already means "successful sudo to ROOT
   executed", so the child adds a single condition: the invoking
   user (`srcuser`) is **not** in the CDB list
   [`lists/soc-admin-users`](lists/soc-admin-users), via
   `<list field="srcuser" lookup="not_match_key">`.
-- **The list:** plain `key:value` lines — one admin account per
+- **The list:** plain `key:value` lines, one admin account per
   line (`testadmin`, `operator`, `testoperator`). With
   `not_match_key` only the keys matter; the `:admin` value is a
   label. Add a user to the list and their sudo stops alerting;
   remove them and it starts. **Deploy the list before restarting
-  the manager** — a rule that references a missing list file will
+  the manager**: a rule that references a missing list file will
   stop the analysis engine from loading.
-- **Honest limitation:** "non-admin" here means "not on this
+- **Limitation:** "non-admin" here means "not on this
   hand-maintained list". It does not query the sudoers file or a
   directory. On anything bigger than a test environment, generate the list from
   your source of truth instead of editing it by hand.
@@ -68,11 +68,11 @@ custom decoders to maintain.
   account sudo (`usermod -aG sudo testuser` on `soc-linux-01`), run
   `sudo -i` or `sudo /bin/true` as `testuser`, then **remove the
   grant again**. Expect two alerts: stock 5402 and custom 100002.
-  Control case: run the same command as `testadmin` — expect 5402
+  Control case: run the same command as `testadmin`, expect 5402
   only, no 100002. That pair (fires for `testuser`, silent for
   `testadmin`) is the whole test.
 
-### 100003 — FIM escalation for changes under /etc
+### 100003: FIM escalation for changes under /etc
 
 - **Logic:** parent 550 ("integrity checksum changed", level 7)
   fires for any monitored path. This child matches
@@ -83,10 +83,10 @@ custom decoders to maintain.
 - **Test it:** detection test plan **Test 4** (FIM). Modify the test
   file under `/etc` exactly as Test 4 describes. Expect stock 550
   **and** custom 100003 for the same change; a change to a monitored
-  file outside `/etc` should produce 550 only — that contrast is
+  file outside `/etc` should produce 550 only: that contrast is
   what proves the path filter works.
 
-### 100004 — new file in a persistence location
+### 100004: new file in a persistence location
 
 - **Logic:** parent 554 ("file added to the system") plus a path
   filter for `^/etc/(systemd/system/|cron)`. New systemd units and
@@ -113,7 +113,7 @@ docker compose exec wazuh.manager bash -c \
    chmod 660 /var/ossec/etc/rules/local_rules.xml \
              /var/ossec/etc/lists/soc-admin-users"
 
-# Syntax/rule check BEFORE restart — this is the step that catches
+# Syntax/rule check BEFORE restart - this is the step that catches
 # bad XML, unknown parent IDs, and a missing CDB list:
 docker compose exec wazuh.manager /var/ossec/bin/wazuh-logtest -t
 
@@ -130,7 +130,7 @@ docker compose restart wazuh.manager
 
 Then feed one matching event through **Management → Ruleset →
 Logtest** in the dashboard (or `wazuh-logtest` interactively) and
-confirm the custom rule — not just the parent — is the one that
+confirm the custom rule (not just the parent) is the one that
 matches. Field names (`srcuser`, `file`) come from the stock sudo
 and syscheck decoders; if logtest shows a field is not populated
 the way a rule expects, logtest output is where you'll see it.
@@ -138,12 +138,12 @@ the way a rule expects, logtest output is where you'll see it.
 ## Tuning notes
 
 - **100001** is the noise risk. If it pages on legitimate fat-finger
-  logins, raise `frequency` before lowering `level` — you want the
+  logins, raise `frequency` before lowering `level`: you want the
   alert rare *and* loud.
 - **100003/100004** will fire on every package update that touches
   `/etc`. In a test environment that's a feature (you see real change traffic);
   anywhere else, baseline updates first, then decide whether to add
   exceptions.
 - Custom rules that stop matching after a Wazuh upgrade usually
-  broke because a stock parent ID changed — re-check the parents
+  broke because a stock parent ID changed: re-check the parents
   (5716, 5402, 550, 554) on every version bump.
